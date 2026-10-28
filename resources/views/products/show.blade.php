@@ -197,6 +197,46 @@
 
                     </a>
 
+                    @if($product->is_active && $product->stock > 0)
+                        <form
+                            action="{{ route('products.orders.store', $product) }}"
+                            method="POST"
+                            class="mt-4 p-4 rounded-4 border bg-light"
+                        >
+                            @csrf
+                            <h5 class="fw-bold mb-3">Pesan dan unduh invoice</h5>
+                            <div class="row align-items-end g-3">
+                                <div class="col-sm-4">
+                                    <label for="quantity" class="form-label">Jumlah</label>
+                                    <input
+                                        type="number"
+                                        id="quantity"
+                                        name="quantity"
+                                        min="1"
+                                        max="{{ $product->stock }}"
+                                        value="{{ old('quantity', 1) }}"
+                                        class="form-control @error('quantity') is-invalid @enderror"
+                                        required
+                                    >
+                                    @error('quantity')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                <div class="col-sm-8">
+                                    <button type="submit" class="btn btn-modern btn-primary-modern">
+                                        <i class="bi bi-file-earmark-pdf me-1"></i>
+                                        Buat Invoice PDF
+                                    </button>
+                                </div>
+                            </div>
+                            <small class="text-muted d-block mt-2">
+                                Invoice berstatus belum dibayar. Stok akan dipesan setelah invoice dibuat.
+                            </small>
+                        </form>
+                    @else
+                        <p class="text-muted mt-4 mb-0">Produk tidak tersedia untuk dipesan.</p>
+                    @endif
+
                 </div>
 
             </div>

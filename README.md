@@ -83,6 +83,27 @@ Pembuatan produk memerlukan `name` dan `price`; `stock` default ke `0`, sedangka
 `is_active` default ke `true`. Upload `image` menerima JPG, JPEG, PNG, atau WEBP
 dengan ukuran maksimum 2 MB.
 
+## Fitur produk dan invoice SabuMarket
+
+Foto produk yang diunggah lewat dashboard atau API diputar sesuai pilihan,
+dipotong dan diubah ukurannya menjadi 1200 x 1200, diberi watermark SabuMarket,
+lalu disimpan sebagai WEBP. Untuk menjalankan pemrosesan gambar, aktifkan
+ekstensi PHP GD dengan dukungan WebP di konfigurasi PHP XAMPP (`php.ini`).
+Dashboard juga memerlukan symbolic link storage publik:
+
+```shell
+php artisan storage:link
+```
+
+Pada halaman detail produk, pengguna yang login dapat memesan produk sesuai stok
+yang tersedia. Sistem menyimpan snapshot harga dan nama produk, mengurangi stok,
+lalu mengunduh invoice PDF berstatus belum dibayar. Invoice hanya dapat diunduh
+oleh pemilik pesanan. Jalankan migrasi untuk membuat tabel pesanan:
+
+```shell
+php artisan migrate
+```
+
 Contoh membuat produk dengan JSON:
 
 ```http

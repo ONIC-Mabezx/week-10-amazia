@@ -198,10 +198,31 @@
 
                 <i class="bi bi-info-circle me-1"></i>
 
-                JPG, JPEG, PNG atau WEBP — maksimal 2 MB.
+                JPG, JPEG, PNG atau WEBP — maksimal 2 MB. Foto akan dipotong menjadi persegi, diberi watermark SabuMarket, dan disimpan sebagai WEBP.
 
             </small>
 
+        </div>
+
+        <div class="mt-3">
+            <label for="image_rotation" class="form-label">Rotasi foto</label>
+            <select
+                name="image_rotation"
+                id="image_rotation"
+                class="form-select @error('image_rotation') is-invalid @enderror"
+            >
+                @foreach([0, 90, 180, 270] as $rotation)
+                    <option
+                        value="{{ $rotation }}"
+                        @selected((int) old('image_rotation', 0) === $rotation)
+                    >
+                        {{ $rotation }}&deg;
+                    </option>
+                @endforeach
+            </select>
+            @error('image_rotation')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
         </div>
 
 

@@ -1,6 +1,6 @@
 <?php
 
-
+use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
@@ -11,6 +11,11 @@ Route::get('/', function () {
 
 Route::middleware('auth')->group(function () {
     Route::resource('products', ProductController::class);
+    Route::post('/products/{product}/orders', [OrderController::class, 'store'])
+        ->name('products.orders.store');
+    Route::get('/orders/{order}/invoice', [OrderController::class, 'invoice'])
+        ->whereNumber('order')
+        ->name('orders.invoice');
 
     Route::get('/dashboard', function () {
         return redirect()->route('products.index');
@@ -26,4 +31,4 @@ Route::middleware('auth')->group(function () {
         ->name('profile.destroy');
 });
 
-require __DIR__ . '/auth.php';
+require __DIR__.'/auth.php';

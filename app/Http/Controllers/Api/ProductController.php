@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
+use App\Services\ProductImageProcessor;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -20,7 +21,7 @@ class ProductController extends Controller
         return response()->json($products);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(Request $request, ProductImageProcessor $imageProcessor): JsonResponse
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -29,12 +30,18 @@ class ProductController extends Controller
             'price' => ['required', 'numeric', 'min:0'],
             'stock' => ['sometimes', 'integer', 'min:0'],
             'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'image_rotation' => ['sometimes', 'integer', 'in:0,90,180,270'],
             'is_active' => ['sometimes', 'boolean'],
         ]);
 
         if ($request->hasFile('image')) {
-            $data['image'] = $request->file('image')->store('products', 'public');
+            $data['image'] = $imageProcessor->store(
+                $request->file('image'),
+                (int) ($data['image_rotation'] ?? 0)
+            );
         }
+
+        unset($data['image_rotation']);
 
         $product = Product::create($data);
         $product->refresh();
@@ -51,7 +58,7 @@ class ProductController extends Controller
         return response()->json($product);
     }
 
-    public function update(Request $request, Product $product): JsonResponse
+    public function update(Request $request, Product $product, ProductImageProcessor $imageProcessor): JsonResponse
     {
         $data = $request->validate([
             'name' => ['sometimes', 'required', 'string', 'max:255'],
@@ -60,18 +67,26 @@ class ProductController extends Controller
             'price' => ['sometimes', 'required', 'numeric', 'min:0'],
             'stock' => ['sometimes', 'integer', 'min:0'],
             'image' => ['sometimes', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'image_rotation' => ['sometimes', 'integer', 'in:0,90,180,270'],
             'is_active' => ['sometimes', 'boolean'],
         ]);
 
-        if ($request->hasFile('image')) {
-            if ($product->image) {
-                Storage::disk('public')->delete($product->image);
-            }
+        $previousImage = $product->image;
 
-            $data['image'] = $request->file('image')->store('products', 'public');
+        if ($request->hasFile('image')) {
+            $data['image'] = $imageProcessor->store(
+                $request->file('image'),
+                (int) ($data['image_rotation'] ?? 0)
+            );
         }
 
+        unset($data['image_rotation']);
+
         $product->update($data);
+
+        if ($request->hasFile('image') && $previousImage) {
+            Storage::disk('public')->delete($previousImage);
+        }
 
         return response()->json($product);
     }

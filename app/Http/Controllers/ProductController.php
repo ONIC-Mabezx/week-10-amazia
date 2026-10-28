@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Services\ProductImageProcessor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -53,7 +54,7 @@ class ProductController extends Controller
         return view('products.create');
     }
 
-    public function store(Request $request)
+    public function store(Request $request, ProductImageProcessor $imageProcessor)
     {
         $data = $request->validate([
             'name' => 'required|string|max:255',
@@ -62,12 +63,17 @@ class ProductController extends Controller
             'price' => 'required|numeric|min:0',
             'stock' => 'nullable|integer|min:0',
             'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'image_rotation' => 'nullable|integer|in:0,90,180,270',
         ]);
 
         if ($request->hasFile('image')) {
-            $data['image'] = $request->file('image')
-                ->store('products', 'public');
+            $data['image'] = $imageProcessor->store(
+                $request->file('image'),
+                (int) ($data['image_rotation'] ?? 0)
+            );
         }
+
+        unset($data['image_rotation']);
 
         Product::create($data);
 
@@ -86,7 +92,7 @@ class ProductController extends Controller
         return view('products.edit', compact('product'));
     }
 
-    public function update(Request $request, Product $product)
+    public function update(Request $request, Product $product, ProductImageProcessor $imageProcessor)
     {
         $data = $request->validate([
             'name' => 'required|string|max:255',
@@ -95,18 +101,25 @@ class ProductController extends Controller
             'price' => 'required|numeric|min:0',
             'stock' => 'nullable|integer|min:0',
             'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'image_rotation' => 'nullable|integer|in:0,90,180,270',
         ]);
 
-        if ($request->hasFile('image')) {
-            if ($product->image) {
-                Storage::disk('public')->delete($product->image);
-            }
+        $previousImage = $product->image;
 
-            $data['image'] = $request->file('image')
-                ->store('products', 'public');
+        if ($request->hasFile('image')) {
+            $data['image'] = $imageProcessor->store(
+                $request->file('image'),
+                (int) ($data['image_rotation'] ?? 0)
+            );
         }
 
+        unset($data['image_rotation']);
+
         $product->update($data);
+
+        if ($request->hasFile('image') && $previousImage) {
+            Storage::disk('public')->delete($previousImage);
+        }
 
         return redirect()
             ->route('products.index')
